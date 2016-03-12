@@ -1,66 +1,58 @@
----
-output: html_document
----
 # Reproducible Research: Peer Assessment 1
 
 ## Loading and preprocessing the data
 
-Load the data
-```{r echo = TRUE}
-setwd("/Users/meteozguz/GitHub/RepData_PeerAssessment1")
+Time series plot of the average number of steps taken
+The 5-minute interval that, on average, contains the maximum number of steps
+Code to describe and show a strategy for imputing missing data
+Histogram of the total number of steps taken each day after missing values are imputed
+Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+
+Load the data (<b>DO NOT FORGET TO EDIT THE PATH BEFORE RERUN THE CODE!</b>)
+
+```r
+setwd("C:\\Users\\AzzA\\Desktop\\RepData_PeerAssessment1-master")
 rawData <- read.csv(file.path(getwd(),"activity.csv"),sep=",")
 ```
+## What is mean total number of steps taken per day?
 
-Ignoring the missing values in the dataset...    
+Ignore missing values
 
-<b>Make a histogram of the total number of steps taken each day (altered xlabeling code taken from http://stackoverflow.com/questions/10286473/rotating-x-axis-labels-in-r-for-barplot)</b>
-```{r echo = TRUE}
-stepsEachDay <- aggregate(rawData$steps ~ rawData$date, rawData, sum)
+```r
+noNAdata <- na.omit(rawData)
+```
+
+1. Calculate the total number of steps taken per day
+
+```r
+stepsEachDay <- aggregate(noNAdata$steps ~ noNAdata$date, noNAdata, sum)
 names(stepsEachDay) <- c("date","steps")
-lablist <- as.vector(stepsEachDay$date)
-```
-Adds room for the rotated labels
-```{r echo = TRUE}
-par(mar = c(7, 4, 2, 2) + 0.2) 
-```
-Line which does the trick (together with barplot "space = 1" parameter)
-```{r echo = TRUE}
-end_point = 0.5 + nrow(stepsEachDay) + nrow(stepsEachDay)-1
-
-barplot(stepsEachDay$steps, ylab="Total Number of Steps",
-        ylim = c(0,5+max(stepsEachDay$steps)),
-        xlab ="Days", 
-        main="Histogram of the Total Number of Steps taken each Day",
-        col="red", space=1)
-
-text(seq(1.5,end_point,by=2), par("usr")[3]+0.25, 
-     srt = 60, adj= 1, xpd = TRUE,
-     labels = paste(stepsEachDay$date), cex=0.65) # Rotates 60 degrees, srt=60
+stepsEachDay$steps <- as.numeric(stepsEachDay$steps)
 ```
 
-<b>Calculate and report the mean and median total number of steps taken per day</b>
-```{r echo = TRUE}
-mean <- sum(stepsEachDay$steps)/length(stepsEachDay$steps)
-```
-<b>`r mean`</b> is the mean total number of steps taken per day 
-```{r echo = TRUE}
-median <- median(stepsEachDay$steps)
-```
-<b>`r median`</b> is the median total number of steps taken per day
+2. If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
 
-
-<b>What is the average daily activity pattern?</b>
-```{r echo = TRUE}
-plot(as.numeric(as.character(stepsEachDay$steps)) ~ as.POSIXct(paste(as.Date(stepsEachDay$date))), 
-     type="l", xlab="Days", ylab="Number of Steps Taken per Day",
-     main ="Average Daily Activity Pattern")
+```r
+hist(stepsEachDay$steps, main="Histogram of the total number of steps taken each day", xlab="Number of Steps", col="red")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)
 
-<b>Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)</b>
+3.Calculate and report the mean and median of the total number of steps taken per day
 
-```{r echo = TRUE}
-stepsEachInterval <- aggregate(rawData$steps ~ rawData$interval, rawData, sum)
+```r
+stepsEachDayMedian = median(stepsEachDay$steps)
+stepsEachDayMean =  mean(stepsEachDay$steps)
+```
+<b>1.0766189\times 10^{4}</b> is the mean of total number of steps taken per day 
+<b>1.0765\times 10^{4}</b> is the median of total number of steps taken per day
+
+## What is the average daily activity pattern?
+
+1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+```r
+stepsEachInterval <- aggregate(noNAdata$steps ~ noNAdata$interval, noNAdata, sum)
 names(stepsEachInterval) <- c("interval","steps")
 
 averages <- stepsEachInterval$steps / length(stepsEachDay$steps)
@@ -68,91 +60,102 @@ averages <- stepsEachInterval$steps / length(stepsEachDay$steps)
 plot(as.numeric(as.character(averages)) ~ as.numeric(as.character(stepsEachInterval$interval)) , 
      type="l", xlab="Time Intervals", ylab="Mean of Steps Taken per Interval",
      main ="Time series plot of the 5-minute interval \nand the average number of steps taken, averaged across all days")
-```     
-     
+```
 
-<b>Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?</b>
-```{r echo = TRUE}
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)
+
+2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```r
 theInterval <- stepsEachInterval$interval[which(averages==max(averages))]
 ```
-<b>`r theInterval`</b>. 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps
-
-
+<b>835</b>. 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps
 ## Imputing missing values
+1.Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
-Note that there are a number of days/intervals where there are missing values (coded as NA). The presence of missing days may introduce bias into some calculations or summaries of the data.
-
-# 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
-```{r echo=TRUE}
-missing <- length(which(is.na(rawData$steps)==TRUE))
+```r
+naPos <- which(is.na(rawData$steps))
+missing <- length(naPos)
 ```
-<b>`r missing`</b> is the total number of missing values in the dataset.
+<b>2304</b> is the total number of missing values in the dataset.
 
+2.Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-# 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
-```{r echo=TRUE}
+```r
 meanPerDay <- stepsEachDay$steps/length(unique(rawData$interval))
 stepsEachDay<-cbind(stepsEachDay,meanPerDay)
 ```
 Chosing the mean for that day...
 
-# 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
-```{r echo=TRUE}
-cookedData <- rawData
-for(i in 1:nrow(cookedData )) {
-    if(is.na(cookedData$steps[i])==TRUE){
-      tmp<- stepsEachDay$meanPerDay[which(stepsEachDay$date==cookedData$date[i])]
-      if(length(tmp)!=0){
-        cookedData$steps[i]<-tmp
-      }
-    }
-    # do stuff with row
-}
+3.Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```r
+means <- rep(mean(rawData$steps, na.rm=TRUE), times=length(naPos))
+newDataset <- rawData
+newDataset[naPos, "steps"] <- means
 ```
-<b>Not working probably because of aggregate function</b>
 
+4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
 
-# 4. Make a histogram of the total number of steps taken each day and...
-```{r echo=TRUE}
-stepsEachDay <- aggregate(cookedData$steps ~ cookedData$date, cookedData, sum)
+```r
+stepsEachDay <- aggregate(newDataset$steps ~ newDataset$date, newDataset, sum)
 names(stepsEachDay) <- c("date","steps")
-lablist <- as.vector(stepsEachDay$date)
-```
-Adds room for the rotated labels
-```{r echo = TRUE}
-par(mar = c(7, 4, 2, 2) + 0.2) 
-```
-Line which does the trick (together with barplot "space = 1" parameter)
-```{r echo = TRUE}
-end_point = 0.5 + nrow(stepsEachDay) + nrow(stepsEachDay)-1
-
-barplot(stepsEachDay$steps, ylab="Total Number of Steps",
-        ylim = c(0,5+max(stepsEachDay$steps)),
-        xlab ="Days", 
-        main="Histogram of the Total Number of Steps taken each Day",
-        col="red", space=1)
-
-text(seq(1.5,end_point,by=2), par("usr")[3]+0.25, 
-     srt = 60, adj= 1, xpd = TRUE,
-     labels = paste(stepsEachDay$date), cex=0.65) # Rotates 60 degrees, srt=60
+stepsEachDay$steps <- as.numeric(stepsEachDay$steps)
+hist(stepsEachDay$steps, main="Histogram of the total number of steps taken each day", xlab="Number of Steps", col="red")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)
 
-<b>Calculate and report the mean and median total number of steps taken per day</b>
-```{r echo = TRUE}
-mean <- sum(stepsEachDay$steps)/length(stepsEachDay$steps)
+```r
+stepsEachDayMedian = median(stepsEachDay$steps)
+stepsEachDayMean =  mean(stepsEachDay$steps)
 ```
-<b>`r mean`</b> is the mean total number of steps taken per day 
-```{r echo = TRUE}
-median <- median(stepsEachDay$steps)
-```
-<b>`r median`</b> is the median total number of steps taken per day
-
-Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
-<b>It should differ but it didn't</b>
+<b>1.0766189\times 10^{4}</b> is the mean of total number of steps taken per day 
+<b>1.0766189\times 10^{4}</b> is the median of total number of steps taken per day
+ Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+<b>These values don't differ greatly from the estimates from the first part of the assignment.</b> 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-It won't since filling na strategy didn't work!
+1.Create a new factor variable in the dataset with two levels weekday and weekend indicating whether a given date is a weekday or weekend day.
 
---- End of Fun ---
+```r
+if(!require(timeDate)){
+    install.packages("timeDate")
+    library(timeDate)
+}
+```
+
+```
+## Loading required package: timeDate
+```
+
+```r
+newDataset$day <- weekdays(as.Date(newDataset$date))
+newDataset$isWeekday <- isWeekday(newDataset$date, wday=1:5)
+newDataset$dayType <- factor(newDataset$isWeekday, levels=c(FALSE, TRUE), labels=c('weekend', 'weekday'))
+head(newDataset)
+```
+
+```
+##     steps       date interval    day isWeekday dayType
+## 1 37.3826 2012-10-01        0 Monday      TRUE weekday
+## 2 37.3826 2012-10-01        5 Monday      TRUE weekday
+## 3 37.3826 2012-10-01       10 Monday      TRUE weekday
+## 4 37.3826 2012-10-01       15 Monday      TRUE weekday
+## 5 37.3826 2012-10-01       20 Monday      TRUE weekday
+## 6 37.3826 2012-10-01       25 Monday      TRUE weekday
+```
+
+2.Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+
+```r
+means <- aggregate(newDataset$steps,by=list(newDataset$dayType,newDataset$day, newDataset$interval), mean)
+names(means) <- c("dayType", "day", "interval", "mean")
+library("lattice")
+xyplot(mean ~ interval | dayType, means, type="l", lwd=1, xlab="Interval", ylab="Number of Steps", layout=c(1,2))
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-13-1.png)
+
+<center>--- End of Fun ---</center>
